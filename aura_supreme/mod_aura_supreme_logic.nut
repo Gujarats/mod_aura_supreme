@@ -1,47 +1,30 @@
+::logInfo("[AuraSupreme] Injecting world map roster monitoring systems...");
+
 local mod = ::AuraSupreme.HookMod;
 
-mod.queue(">mod_msu", function()
+mod.hook("scripts/states/world_state", function(q)
 {
-    if (!("AuraSupremePerk" in ::Const.Perks.PerkDefs))
-    {
-        ::Const.Perks.PerkDefs.AuraSupremePerk <- "perk.aura_supreme";
-        
-        local auraPerkStructure = {
-            ID = ::Const.Perks.PerkDefs.AuraSupremePerk,
-            Name = "Supreme Presence",
-            Tooltip = "Unlocks the 'Aura Supreme' active ability, allowing you to instantly break the morale of surrounding enemies.",
-            Icon = "ui/perks/aura_supreme_perk.png", 
-            IconDisabled = "ui/perks/aura_supreme_perk_sw.png"
-        };
-
-        // 3a. Read chosen level row (1-10 mapped to array index 0-9)
-        local targetTier = ::AuraSupreme.Mod.ModSettings.getSetting("PerkTierLevel").getValue() - 1;
-        
-        // Safety bound check just in case arrays look different due to other overhaul mods
-        if (targetTier >= 0 && targetTier < ::Const.Perks.UserSkillTree.len())
-        {
-            ::Const.Perks.UserSkillTree[targetTier].push(auraPerkStructure);
-        }
-        else
-        {
-            // Fallback default to Tier 7 (index 6) if row configurations are broken out of bounds
-            ::Const.Perks.UserSkillTree[6].push(auraPerkStructure);
-        }
-    }
-});
-
-// Hook into character skill generation updates
-mod.hook("scripts/entity/tactical/player", function(q) 
-{
-    q.onCombatStart = @(__original) function()
+    // Hook into the initialization/loading phase of the world map screen
+    q.onInit = @(__original) function()
     {
         __original();
-        
-        if (this.getSkills().hasSkill(::Const.Perks.PerkDefs.AuraSupremePerk))
+
+        ::logInfo("[AuraSupreme] World map state initialized. Scanning player roster...");
+
+        local roster = ::World.getPlayerRoster().getAll();
+        foreach (bro in roster)
         {
-            if (!this.getSkills().hasSkill("active.aura_supreme"))
+            local characterLevel = bro.getLevel();
+
+            // Check if they meet your level 7 requirement
+            if (characterLevel >= 7)
             {
-                this.getSkills().add(::new("mod_aura_supreme_skill"));
+                if (!bro.getSkills().hasSkill("active.aura_supreme"))
+                {
+                    // Clean instantiation via class reference we fixed earlier
+                    bro.getSkills().add(::new("aura_supreme/mod_aura_supreme_skill"));
+                    ::logInfo("[AuraSupreme] Permanently bound Supreme Aura to roster unit: " + bro.getName());
+                }
             }
         }
     };

@@ -1,23 +1,24 @@
+::logInfo("[AuraSupreme] Loading Persistent Skill Asset Definition...");
+
 ::AuraSupreme.Skill <- ::inherit("scripts/skills/skill", {
     m = {
-        IsUsed = false 
+        IsUsed = false
     },
     function create()
     {
         this.m.ID = "active.aura_supreme";
         this.m.Name = "Aura Supreme";
         this.m.Description = "Unleash a terrifying presence that completely shatters the morale of all enemies around you, sending them into an absolute rout.";
-        this.m.Icon = "skills/aura_supreme_icon.png"; 
+        this.m.Icon = "skills/aura_supreme_icon.png";
         this.m.IconDisabled = "skills/aura_supreme_icon_sw.png";
-        this.m.Overlay = "active_103";
+        this.m.Overlay = "aura_supreme_icon";
         this.m.SoundOnUse = [
             "sounds/combat/indomitable_01.wav"
         ];
         this.m.Type = this.Const.SkillType.Active;
         this.m.Order = this.Const.SkillOrder.Any;
         this.m.IsActive = true;
-        this.m.IsTargeted = false; 
-        this.m.IsStacking = false;
+        this.m.IsTargeted = false;
         this.m.IsAttack = false;
         this.m.ActionPointCost = 4;
         this.m.FatigueCost = 20;
@@ -25,9 +26,18 @@
         this.m.MaxRange = 0;
     }
 
+    // FIXED: Prevents world map UI inventory screen breakages by safely hiding the combat skill when out of tactical mode
+    function isHidden()
+    {
+        if (::Tactical.isActive())
+        {
+            return false;
+        }
+        return true;
+    }
+
     function isUsable()
     {
-        // 3b. Read checkbox setting dynamically
         local restrictOnce = ::AuraSupreme.Mod.ModSettings.getSetting("IsOncePerBattle").getValue();
         if (restrictOnce && this.m.IsUsed)
         {
@@ -43,12 +53,12 @@
 
     function onUse( _user, _targetTile )
     {
-        this.m.IsUsed = true; 
-        
+        this.m.IsUsed = true;
         local myTile = _user.getTile();
-        // 3c. Reads the dynamic tile limit (1-3) directly from menu selection
         local radius = ::AuraSupreme.Mod.ModSettings.getSetting("AuraRadius").getValue();
         local factions = _user.getFaction();
+
+        ::logInfo("[AuraSupreme] Skill Triggered by " + _user.getName() + ". Scanning radius: " + radius + " tiles.");
 
         for( local i = 1; i <= radius; i = ++i )
         {
@@ -61,12 +71,12 @@
                 }
 
                 local target = tile.getEntity();
-                
+
                 if (target.getFaction() != factions && !target.isAlliedWith(_user))
                 {
                     target.setMoraleState(this.Const.MoraleState.Fleeing);
                     this.Tactical.EventLog.log(this.Const.UI.getColorizedEntityName(target) + " breaks completely from the Supreme Aura!");
-                    this.spawnIcon("status_effect_04", tile); 
+                    this.spawnIcon("status_effect_04", tile);
                 }
             }
         }

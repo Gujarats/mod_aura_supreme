@@ -1,3 +1,6 @@
+# Works still in progress this mod does not work
+ - wait for me to upload and test first
+ 
 # Aura Supreme Mod
 
 An active ability and perk modification for **Battle Brothers**, built using the Modding Standards & Utilities (MSU) framework and Modern Hooks. 
